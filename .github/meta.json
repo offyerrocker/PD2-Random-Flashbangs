@@ -1,0 +1,8 @@
+[
+    {
+        "ident": "random_flashbangs",
+        "version": "%VERSION%",
+        "patchnotes_url": "https://github.com/mbien1981/PD2-Random-Flashbangs/commits/main/",
+        "download_url": "https://github.com/mbien1981/PD2-Random-Flashbangs/archive/refs/heads/main.zip"
+    }
+]

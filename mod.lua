@@ -1,6 +1,25 @@
 local FlashBangMemeger = class()
+
+FlashBangMemeger.DEBUG = false -- for flashbang makers
+
 FlashBangMemeger.ASSETS_PATH = "mods/FlashBang Packs/"
 FlashBangMemeger.SOFT_PATH = "gui/interface/MemeBangs/"
+
+-- for loging
+FlashBangMemeger.MOD_NAME = "Random Flashes"
+FlashBangMemeger.ERRORS = {
+	ASSETS_PATH_MISSING = "Pack directory not found @"
+		.. FlashBangMemeger.ASSETS_PATH
+		.. "\nIf you are reading this, create the folder manually or get the sample archive from the mod download page: https://modworkshop.net/mod/49716?tab=downloads",
+	META_FILE_BROKEN_OR_CORRUPT = "The meta.json file inside folder '%s' does not contain proper json data or is corrupt.",
+}
+FlashBangMemeger.WARNINGS = {
+	NO_PACKS_FOUND = "No FlashBang Packs Found! Returning to vanilla behavior...",
+	META_FILE_NOT_FOUND = "Could not load meta.json file from path %s",
+	ASSET_FILE_NOT_FOUND = "Could not load %s asset '%s' from path %s",
+	EMPTY_META = "The '%s' pack does not contain any flashbangs!",
+	EMPTY_ASSETS = "The '%s' pack attempted to create a flashbang with no existing assets linked!",
+}
 
 local table_get = function(t, ...)
 	if not t then
@@ -25,6 +44,23 @@ local get_setting = function(key)
 	return nil
 end
 
+local animate_ui = function(total_t, callback)
+	local t = 0
+	local const_frames = 0
+	local count_frames = const_frames + 1
+	while t < total_t do
+		coroutine.yield()
+		t = t + TimerManager:main():delta_time()
+		if count_frames >= const_frames then
+			callback(t / total_t, t)
+			count_frames = 0
+		end
+		count_frames = count_frames + 1
+	end
+
+	callback(1, total_t)
+end
+
 function FlashBangMemeger:init()
 	self.METADATA = {}
 	self.FLASHBANGS = {}
@@ -36,6 +72,11 @@ function FlashBangMemeger:init()
 end
 
 function FlashBangMemeger:load_meta_files()
+	if not FileIO:Exists(self.ASSETS_PATH) then
+		self:log("error", self.ERRORS.ASSETS_PATH_MISSING)
+		return
+	end
+
 	for _, folder in pairs(file.GetDirectories(self.ASSETS_PATH)) do
 		local current_path = self.ASSETS_PATH .. folder .. "/"
 		if io.file_is_readable(current_path .. "meta.json") then
@@ -46,17 +87,28 @@ function FlashBangMemeger:load_meta_files()
 				file:close()
 			end
 
+			if not flash_list then
+				self:log("error", self.ERRORS.META_FILE_BROKEN_OR_CORRUPT:format(folder))
+			end
+
 			table.insert(self.METADATA, {
 				id = folder,
 				path = current_path,
 				flash_list = flash_list or {},
 			})
+		else
+			self:log("warning", self.WARNINGS.META_FILE_NOT_FOUND:format(current_path))
 		end
 	end
 end
 
 function FlashBangMemeger:process_meta_files()
 	for _, meta in pairs(self.METADATA) do
+		if not next(meta.flash_list) then
+			self:log("warning", self.WARNINGS.EMPTY_META:format(meta.id))
+			goto next_item
+		end
+
 		for _, flash_data in pairs(meta.flash_list) do
 			local textures, movies, sounds
 
@@ -72,29 +124,49 @@ function FlashBangMemeger:process_meta_files()
 				sounds = self:load_assets(meta.id, meta.path, flash_data.sounds)
 			end
 
-			table.insert(self.FLASHBANGS, { textures = textures, movies = movies, sounds = sounds })
+			if textures or movies or sounds then
+				table.insert(self.FLASHBANGS, { textures = textures, movies = movies, sounds = sounds })
+			else
+				self:log("warning", self.WARNINGS.EMPTY_ASSETS:format(meta.id))
+			end
 		end
+
+		::next_item::
 	end
+
+	if not next(self.FLASHBANGS) then
+		self:log("warning", self.WARNINGS.NO_PACKS_FOUND)
+	end
+end
+
+function FlashBangMemeger:log(label, text)
+	log(string.format("[%s] [%s] %s", self.MOD_NAME, (label or "log"):upper(), text))
 end
 
 local ext_list = {
 	[Idstring("texture"):key()] = { "", ".texture", ".dds" },
 	[Idstring("movie"):key()] = { "", ".movie" },
-	["sounds"] = { "", ".ogg", ".wav", ".wave" },
+	["sounds"] = { "", ".ogg" },
 }
 local dir_ext = {
 	[Idstring("texture"):key()] = { "", "textures/", "assets/", "assets/textures/" },
 	[Idstring("movie"):key()] = { "", "movies/", "videos/", "assets/", "assets/movies/" },
 	["sounds"] = { "", "sounds/", "assets/", "assets/sounds/" },
 }
+local ext_translations = {
+	[Idstring("texture"):key()] = "texture",
+	[Idstring("movie"):key()] = "movie",
+}
 function FlashBangMemeger:load_assets(flash_id, path, asset_list, asset_type)
 	local path_list = {}
 	for _, asset in pairs(asset_list) do
+		local file_found
 		for _, extension in pairs((asset_type and ext_list[asset_type:key()]) or ext_list.sounds) do
 			for _, prefix in pairs((asset_type and dir_ext[asset_type:key()]) or dir_ext.sounds) do
 				local file_path = path .. prefix .. asset .. extension
 				local soft_path = self.SOFT_PATH .. flash_id .. "/" .. asset
 				if io.file_is_readable(file_path) then
+					file_found = true
 					if asset_type and not DB:has(asset_type, soft_path) then
 						BLT.AssetManager:CreateEntry(soft_path, asset_type, file_path)
 					end
@@ -104,6 +176,11 @@ function FlashBangMemeger:load_assets(flash_id, path, asset_list, asset_type)
 					goto next_asset
 				end
 			end
+		end
+
+		if not file_found then
+			asset_type = asset_type and ext_translations[asset_type:key()] or "sound"
+			self:log("warning", self.WARNINGS.ASSET_FILE_NOT_FOUND:format(asset_type, asset, path))
 		end
 
 		::next_asset::
@@ -183,7 +260,10 @@ function FlashBangMemeger:setup_panel()
 end
 
 function FlashBangMemeger:set_visual(type, path)
-	self:remove_current_visuals()
+	self:remove_current_visuals(true)
+	if type == "none" then
+		return
+	end
 
 	if type == "movie" then
 		self.video = self.panel:video({ video = path, loop = true, layer = 1 })
@@ -192,23 +272,54 @@ function FlashBangMemeger:set_visual(type, path)
 		return
 	end
 
-	self.bitmap = self.panel:bitmap({ texture = path, color = Color.white:with_alpha(1), layer = 1 })
+	self.bitmap = self.panel:bitmap({
+		texture = path,
+		blend_mode = "add",
+		color = Color.white:with_alpha(1),
+		layer = 1,
+	})
 	self.bitmap:set_size(self.panel:w(), self.panel:h())
 end
 
-function FlashBangMemeger:remove_current_visuals()
+function FlashBangMemeger:remove_current_visuals(skip_anim)
 	if not alive(self.panel) then
 		return
 	end
 
 	if alive(self.bitmap) then
-		self.panel:remove(self.bitmap)
-		self.bitmap = nil
+		if skip_anim then
+			self.panel:remove(self.bitmap)
+			self.bitmap = nil
+			return
+		end
+
+		self.bitmap:animate(function(o)
+			animate_ui(1, function(p)
+				o:set_alpha(math.lerp(o:alpha(), 0, p))
+			end)
+
+			o:set_alpha(0)
+			o:parent():remove(o)
+			self.bitmap = nil
+		end)
 	end
 
 	if alive(self.video) then
-		self.panel:remove(self.video)
-		self.video = nil
+		if skip_anim then
+			self.panel:remove(self.video)
+			self.video = nil
+			return
+		end
+
+		self.video:animate(function(o)
+			animate_ui(1, function(p)
+				o:set_alpha(math.lerp(o:alpha(), 0, p))
+			end)
+
+			o:set_alpha(0)
+			o:parent():remove(o)
+			self.video = nil
+		end)
 	end
 end
 
@@ -225,6 +336,26 @@ end
 if RequiredScript == "lib/setups/gamesetup" then
 	local GameSetup = _G["GameSetup"]
 	Hooks:PostHook(GameSetup, "init_managers", "MemeBangs:init_managers", function(self, managers)
+		if managers.memebangs then
+			return
+		end
+
+		managers.memebangs = FlashBangMemeger:new()
+	end)
+end
+
+-- there is no reason to init memebangs in the main menu, this is just for asset loading debug purposes.
+-- hardcoded steam id so I don't accidentally leave debug enabled :wololo:
+if
+	(Steam and Steam:userid() == "76561197960841550" or FlashBangMemeger.DEBUG)
+	and RequiredScript == "lib/setups/setup"
+then
+	local Setup = _G["Setup"]
+	Hooks:PostHook(Setup, "init_managers", "MemeBangs:init_managers", function(self, managers)
+		if managers.memebangs then
+			return
+		end
+
 		managers.memebangs = FlashBangMemeger:new()
 	end)
 end
@@ -249,19 +380,27 @@ if RequiredScript == "lib/units/beings/player/playerdamage" then
 			return
 		end
 
-		if managers.memebangs.audio_source and not managers.memebangs.audio_source:is_active() then
+		local visual_fade_out = get_setting("__picture_fadeout")
+		local audio_fade_out = get_setting("__volume_fadeout")
+		if not visual_fade_out and not audio_fade_out then
 			return
 		end
 
 		local flashbang_progress = managers.environment_controller._current_flashbang
+		if not flashbang_progress then
+			return
+		end
+
 		flashbang_progress = math.clamp(tonumber(flashbang_progress), 0, 1)
 
-		local visual_fade_out = get_setting("__picture_fadeout")
 		if visual_fade_out then
 			managers.memebangs:set_alpha(flashbang_progress)
 		end
 
-		local audio_fade_out = get_setting("__volume_fadeout")
+		if managers.memebangs.audio_source and not managers.memebangs.audio_source:is_active() then
+			return
+		end
+
 		if audio_fade_out then
 			managers.memebangs:set_volume(flashbang_progress * get_setting("__volume_start"))
 		end

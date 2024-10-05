@@ -1,11 +1,25 @@
 {
     "name": "Random FlashBangs",
     "author": "Dr_Newbie, _atom",
-    "contact": "https://modworkshop.net/mod/39457 \ndiscord: _atom",
+    "contact": "https://modworkshop.net/user/_atom",
     "priority": 100,
-    "version": "2024-10-01",
+    "version": "1.1",
     "blt_version": 2,
+    "updates": [
+        {
+            "identifier": "random_flashbangs",
+            "host": {
+                "meta": "https://github.com/mbien1981/PD2-Random-Flashbangs/releases/download/auto-update/meta.json",
+                "download": "https://github.com/mbien1981/PD2-Random-Flashbangs/archive/refs/heads/main.zip",
+                "patchnotes": "https://github.com/mbien1981/PD2-Random-Flashbangs/commits/main/"
+            }
+        }
+    ],
     "hooks": [
+        {
+            "hook_id": "lib/setups/setup",
+            "script_path": "mod.lua"
+        },
         {
             "hook_id": "lib/setups/gamesetup",
             "script_path": "mod.lua"
