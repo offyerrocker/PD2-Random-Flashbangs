@@ -1,0 +1,20 @@
+<mod name="Random FlashBangs" global_key="MemeBangs">
+	<Localization default="loc/en.json" />
+	<Options>
+		<options title_id="MemeBangs_opt_menu_name" desc_id="MemeBangs_opt_menu_none"
+			build_items="true">
+			<option type="number" min="0" max="1" step="0.1" show_value="true" default_value="1"
+				title_id="MemeBangs_opt_volume_start" desc_id="MemeBangs_opt_volume_start_desc"
+				name="__volume_start"
+			/>
+			<option type="boolean" default_value="true"
+				title_id="MemeBangs_opt_volume_fadeout"
+				desc_id="MemeBangs_opt_volume_fadeout_desc" name="__volume_fadeout"
+			/>
+			<option type="boolean" default_value="true"
+				title_id="MemeBangs_opt_picture_fadeout"
+				desc_id="MemeBangs_opt_picture_fadeout_desc" name="__picture_fadeout"
+			/>
+		</options>
+	</Options>
+</mod>
