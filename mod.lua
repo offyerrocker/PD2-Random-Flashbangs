@@ -179,8 +179,8 @@ function FlashBangMemeger:load_assets(flash_id, path, asset_list, asset_type)
 		end
 
 		if not file_found then
-			asset_type = asset_type and ext_translations[asset_type:key()] or "sound"
-			self:log("warning", self.WARNINGS.ASSET_FILE_NOT_FOUND:format(asset_type, asset, path))
+			local type = asset_type and ext_translations[asset_type:key()] or "sound"
+			self:log("warning", self.WARNINGS.ASSET_FILE_NOT_FOUND:format(type, asset, path))
 		end
 
 		::next_asset::
