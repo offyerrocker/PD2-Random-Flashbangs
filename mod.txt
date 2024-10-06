@@ -3,7 +3,7 @@
     "author": "Dr_Newbie, _atom",
     "contact": "https://modworkshop.net/user/_atom",
     "priority": 100,
-    "version": "1.1",
+    "version": "1.2",
     "blt_version": 2,
     "updates": [
         {
