@@ -124,7 +124,7 @@ function FlashBangMemeger:process_meta_files()
 				sounds = self:load_assets(meta.id, meta.path, flash_data.sounds)
 			end
 
-			if textures or movies or sounds then
+			if textures or movies then
 				table.insert(self.FLASHBANGS, { textures = textures, movies = movies, sounds = sounds })
 			else
 				self:log("warning", self.WARNINGS.EMPTY_ASSETS:format(meta.id))
