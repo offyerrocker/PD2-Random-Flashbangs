@@ -194,26 +194,27 @@ function FlashBangMemeger:get_random_flashbang()
 		return "none", "flashbang list is empty", nil
 	end
 
-	local flash = self.FLASHBANGS[math.random(#self.FLASHBANGS)]
+	-- defined @core/lib/utils/coretable.lua
+	local flash = table.random(self.FLASHBANGS)
 	local sound
 
 	if flash.sounds then
-		sound = flash.sounds[math.random(#flash.sounds)]
+		sound = table.random(flash.sounds)
 	end
 
 	if flash.movies and flash.textures then
-		local flash_type = ({ "movie", "texture" })[math.random(1, 2)]
+		local flash_type = table.random({ "movie", "texture" })
 		local asset_list = flash_type == "movie" and flash.movies or flash.textures
 
-		return flash_type, asset_list[math.random(#asset_list)], sound
+		return flash_type, table.random(asset_list), sound
 	end
 
 	if flash.textures then
-		return "texture", flash.textures[#flash.textures], sound
+		return "texture", table.random(flash.textures), sound
 	end
 
 	if flash.movies then
-		return "movie", flash.movies[#flash.movies], sound
+		return "movie", table.random(flash.movies), sound
 	end
 
 	return "none", "", sound
