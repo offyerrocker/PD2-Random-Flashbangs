@@ -1,6 +1,6 @@
 local FlashBangMemeger = class()
 
-FlashBangMemeger.DEBUG = false -- for flashbang makers
+FlashBangMemeger.DEBUG = io.file_is_readable(ModPath .. "developer.txt") or false -- for flashbang makers
 
 FlashBangMemeger.ASSETS_PATH = "mods/FlashBang Packs/"
 FlashBangMemeger.SOFT_PATH = "gui/interface/MemeBangs/"
