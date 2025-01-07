@@ -345,11 +345,7 @@ if RequiredScript == "lib/setups/gamesetup" then
 end
 
 -- there is no reason to init memebangs in the main menu, this is just for asset loading debug purposes.
--- hardcoded steam id so I don't accidentally leave debug enabled :wololo:
-if
-	(Steam and Steam:userid() == "76561197960841550" or FlashBangMemeger.DEBUG)
-	and RequiredScript == "lib/setups/setup"
-then
+if FlashBangMemeger.DEBUG and RequiredScript == "lib/setups/setup" then
 	local Setup = _G["Setup"]
 	Hooks:PostHook(Setup, "init_managers", "MemeBangs:init_managers", function(self, managers)
 		if managers.memebangs then
