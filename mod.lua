@@ -237,7 +237,7 @@ function FlashBangMemeger:stop_audio()
 		-- self.audio_buffer = nil
 	end
 
-	if self.audio_source then
+	if self.audio_source and not self.audio_source:is_closed() then
 		self.audio_source:stop()
 		-- self.audio_source:close(true)
 		-- self.audio_source = nil
@@ -245,7 +245,7 @@ function FlashBangMemeger:stop_audio()
 end
 
 function FlashBangMemeger:set_volume(volume)
-	if self.audio_source then
+	if self.audio_source and not self.audio_source:is_closed() then
 		self.audio_source:set_volume(volume)
 	end
 end
