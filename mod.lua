@@ -394,7 +394,7 @@ if RequiredScript == "lib/units/beings/player/playerdamage" then
 			managers.memebangs:set_alpha(flashbang_progress)
 		end
 
-		if managers.memebangs.audio_source and not managers.memebangs.audio_source:is_active() then
+		if not managers.memebangs.audio_source or managers.memebangs.audio_source:is_closed() or not managers.memebangs.audio_source:is_active() then
 			return
 		end
 
